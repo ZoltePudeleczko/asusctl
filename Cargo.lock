@@ -28,7 +28,7 @@ dependencies = [
 
 [[package]]
 name = "asusctl"
-version = "6.1.12"
+version = "6.1.12-minfork"
 dependencies = [
  "dmi_id",
  "env_logger",
@@ -45,7 +45,7 @@ dependencies = [
 
 [[package]]
 name = "asusd"
-version = "6.1.12"
+version = "6.1.12-minfork"
 dependencies = [
  "cargo-husky",
  "concat-idents",
@@ -70,7 +70,7 @@ dependencies = [
 
 [[package]]
 name = "asusd-user"
-version = "6.1.12"
+version = "6.1.12-minfork"
 dependencies = [
  "config-traits",
  "dirs",
@@ -387,7 +387,7 @@ dependencies = [
 
 [[package]]
 name = "config-traits"
-version = "6.1.12"
+version = "6.1.12-minfork"
 dependencies = [
  "log",
  "ron",
@@ -422,7 +422,7 @@ dependencies = [
 
 [[package]]
 name = "dmi_id"
-version = "6.1.12"
+version = "6.1.12-minfork"
 dependencies = [
  "log",
  "udev",
@@ -1040,7 +1040,7 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "rog_aura"
-version = "6.1.12"
+version = "6.1.12-minfork"
 dependencies = [
  "dmi_id",
  "log",
@@ -1051,7 +1051,7 @@ dependencies = [
 
 [[package]]
 name = "rog_dbus"
-version = "6.1.12"
+version = "6.1.12-minfork"
 dependencies = [
  "asusd",
  "rog_aura",
@@ -1063,7 +1063,7 @@ dependencies = [
 
 [[package]]
 name = "rog_platform"
-version = "6.1.12"
+version = "6.1.12-minfork"
 dependencies = [
  "concat-idents",
  "inotify",
@@ -1076,7 +1076,7 @@ dependencies = [
 
 [[package]]
 name = "rog_scsi"
-version = "6.1.12"
+version = "6.1.12-minfork"
 dependencies = [
  "ron",
  "serde",
@@ -1086,7 +1086,7 @@ dependencies = [
 
 [[package]]
 name = "rog_slash"
-version = "6.1.12"
+version = "6.1.12-minfork"
 dependencies = [
  "dmi_id",
  "serde",

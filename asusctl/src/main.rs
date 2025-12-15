@@ -1,8 +1,5 @@
-use std::convert::TryFrom;
 use std::env::args;
-use std::path::Path;
 use std::process::Command;
-use std::thread::sleep;
 
 use aura_cli::{LedPowerCommand1, LedPowerCommand2};
 use dmi_id::DMIID;
