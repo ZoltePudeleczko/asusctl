@@ -172,23 +172,23 @@ macro_rules! std_config_load {
         /// use config_traits::{StdConfig, StdConfigLoad2};
         ///
         /// #[derive(Deserialize, Serialize, Debug)]
-        /// struct FanCurveConfigOld {}
+        /// struct ConfigOld {}
         ///
         /// #[derive(Deserialize, Serialize, Debug)]
-        /// struct FanCurveConfigOlder {}
+        /// struct ConfigOlder {}
         ///
         /// #[derive(Deserialize, Serialize, Debug)]
-        /// struct FanCurveConfig {}
+        /// struct Config {}
         ///
-        /// impl From<FanCurveConfigOld> for FanCurveConfig {
-        ///     fn from(_: FanCurveConfigOld) -> Self { Self {} }
+        /// impl From<ConfigOld> for Config {
+        ///     fn from(_: ConfigOld) -> Self { Self {} }
         /// }
         ///
-        /// impl From<FanCurveConfigOlder> for FanCurveConfig {
-        ///     fn from(_: FanCurveConfigOlder) -> Self { Self {} }
+        /// impl From<ConfigOlder> for Config {
+        ///     fn from(_: ConfigOlder) -> Self { Self {} }
         /// }
         ///
-        /// impl StdConfig for FanCurveConfig {
+        /// impl StdConfig for Config {
         ///     fn new() -> Self { Self {} }
         ///
         ///     fn file_name(&self) -> std::string::String { "test_name.conf".to_owned() }
@@ -196,7 +196,7 @@ macro_rules! std_config_load {
         ///     fn config_dir() -> PathBuf { PathBuf::from("/tmp") }
         /// }
         ///
-        /// impl StdConfigLoad2<FanCurveConfigOld, FanCurveConfigOlder> for FanCurveConfig {}
+        /// impl StdConfigLoad2<ConfigOld, ConfigOlder> for Config {}
         /// ```
         ///
         /// If all of the generics fails to parse, then the old config is renamed and a
