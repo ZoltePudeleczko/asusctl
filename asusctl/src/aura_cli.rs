@@ -180,36 +180,6 @@ pub struct TwoColourSpeed {
     pub zone: AuraZone,
 }
 
-#[derive(Debug, Clone, Default, Options)]
-pub struct MultiZone {
-    #[options(help = "print help message")]
-    help: bool,
-    #[options(short = "a", meta = "", help = "set the RGB value e.g, ff00ff")]
-    pub colour1: Colour,
-    #[options(short = "b", meta = "", help = "set the RGB value e.g, ff00ff")]
-    pub colour2: Colour,
-    #[options(short = "c", meta = "", help = "set the RGB value e.g, ff00ff")]
-    pub colour3: Colour,
-    #[options(short = "d", meta = "", help = "set the RGB value e.g, ff00ff")]
-    pub colour4: Colour,
-}
-
-#[derive(Debug, Clone, Default, Options)]
-pub struct MultiColourSpeed {
-    #[options(help = "print help message")]
-    help: bool,
-    #[options(short = "a", meta = "", help = "set the RGB value e.g, ff00ff")]
-    pub colour1: Colour,
-    #[options(short = "b", meta = "", help = "set the RGB value e.g, ff00ff")]
-    pub colour2: Colour,
-    #[options(short = "c", meta = "", help = "set the RGB value e.g, ff00ff")]
-    pub colour3: Colour,
-    #[options(short = "d", meta = "", help = "set the RGB value e.g, ff00ff")]
-    pub colour4: Colour,
-    #[options(no_long, meta = "", help = "set the speed: low, med, high")]
-    pub speed: Speed,
-}
-
 /// Byte value for setting the built-in mode.
 ///
 /// Enum corresponds to the required integer value
