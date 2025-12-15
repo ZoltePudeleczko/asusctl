@@ -1,12 +1,12 @@
 [workspace.package]
-version = "6.1.12"
+version = "6.1.12-minfork"
 rust-version = "1.82"
 license = "MPL-2.0"
 readme = "README.md"
-authors = ["Luke <luke@ljones.dev>"]
-repository = "https://gitlab.com/asus-linux/asusctl"
-homepage = "https://gitlab.com/asus-linux/asusctl"
-description = "Laptop feature control for ASUS ROG laptops and others"
+authors = ["ZoltePudeleczko <szzborowski@gmail.com>", "Luke <luke@ljones.dev>"]
+repository = "https://github.com/ZoltePudeleczko/asusctl"
+homepage = "https://github.com/ZoltePudeleczko/asusctl"
+description = "Laptop feature control for ASUS ROG laptops and others (Ubuntu/PopOS fork)"
 edition = "2021"
 
 [workspace]
@@ -19,16 +19,12 @@ members = [
   "dmi-id",
   "rog-platform",
   "rog-dbus",
-  "rog-anime",
   "rog-aura",
-  "rog-profiles",
-  "rog-control-center",
   "rog-slash",
-  "simulators",
   "rog-scsi",
 ]
 
-default-members = ["asusctl", "asusd", "asusd-user", "rog-control-center"]
+default-members = ["asusctl", "asusd", "asusd-user"]
 
 [workspace.dependencies]
 tokio = { version = "^1.39.0", default-features = false, features = [

@@ -158,6 +158,22 @@ impl LedSupportFile {
                 );
             }
         }
+
+        // In test environments, try to load from source data directory
+        #[cfg(test)]
+        if !loaded {
+            use std::path::PathBuf;
+            let mut data_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+            data_path.push("data/aura_support.ron");
+            if let Ok(file) = std::fs::read_to_string(&data_path) {
+                if let Ok(mut tmp) = ron::from_str::<LedSupportFile>(&file) {
+                    data.0.append(&mut tmp.0);
+                    loaded = true;
+                    info!("Loaded LED support data from source: {:?}", data_path);
+                }
+            }
+        }
+
         data.0.sort_by(|a, b| a.device_name.cmp(&b.device_name));
 
         if loaded {

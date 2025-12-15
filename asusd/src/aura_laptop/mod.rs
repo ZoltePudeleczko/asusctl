@@ -28,7 +28,7 @@ impl Aura {
         Ok(())
     }
 
-    pub async fn lock_config(&self) -> MutexGuard<AuraConfig> {
+    pub async fn lock_config(&self) -> MutexGuard<'_, AuraConfig> {
         self.config.lock().await
     }
 

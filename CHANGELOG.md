@@ -2,34 +2,73 @@
 
 ## [Unreleased]
 
-## [v6.1.12]
+## [v6.1.12-minfork] - Fork Starting Point
+
+> **⚠️ FORK NOTICE:** This version marks the beginning of a fork from the original asusctl project. This fork is built and tested with **Pop!_OS 24.04 LTS** and **ROG Zephyrus G16** in mind. It may work on other configurations but should be used with caution.
+
+### Removed
+
+- Removed `rog-control-center` GUI application and all GUI components
+- Removed `rog-anime` AniMe Matrix display support
+- Removed simulators package
+- Removed anime CLI commands from `asusctl`
+- Removed anime device handling from `asusd`
+- Removed anime DBus interfaces
+- Removed anime functionality from `asusd-user` (kept for per-key RGB support)
+- Removed power profile switching (use distro tools like `system76-power` on Pop!_OS)
+- Removed fan curve control (use distro tools like `system76-power` on Pop!_OS)
+- Removed battery charge limit control
+- Removed BIOS/EFI controls (POST sound, GPU MUX)
 
 ### Changed
+
+- Streamlined codebase for Ubuntu/Pop!_OS compatibility
+- Focused solely on LED control: keyboard backlight (aura) and LED slash display
+- Removed power profiles and fan curves (expecting distro to handle these, e.g., `system76-power` on Pop!_OS)
+- Optimized for ROG Zephyrus G16 laptops (though may work on other ASUS laptops)
+
+### Note
+
+- This fork diverges from the original project at version 6.1.12
+- Original project: <https://gitlab.com/asus-linux/asusctl>
+- For GUI and AniMe Matrix features, please refer to the original project
+
+---
+
+## [v6.1.12] - Original Project
+
+### Changed
+
 - Fix an unbounded event loop caused by other processes causing a "modify" event on the screen backlight brightness.
 
 ## [v6.1.11]
 
 ### Changed
+
 - Fix anime flickering issue when using custom anims (@I-Al-Istannen)
 - Include pt_BR translations file (@PabloKiryu)
 
 ## Added
+
 - Support for the screenpad brightness on some Laptops. This includes syncing to the primary screen brightness, and a gamma adjustment to set brightness scaling.
   - Add asusctl CLI options
   - Add UI options
   - Add a fake gamma correction (`asusctl backlight --sync-screenpad-brightness`, 1.5 for example sets screenpad low brightness lower than primary, and scales upwards)
 
 ### Changed
+
 - asusd: single line fix for profile switching
 
 ## [v6.1.9]
 
 ### Changed
+
 - ROGCC: better handling of platform profiles
 
 ## [v6.1.8]
 
 ### Changed
+
 - Testing CI for opensuse RPM build
 - ROGCC: Fixes to showing the PPT enablement toggle
 - ROGCC: Fixes to how PPT and NV sliders work and enable/disable
@@ -38,43 +77,51 @@
 ## [v6.1.7]
 
 ### Changed
+
 - Fix Slash display enable
 
 ## [v6.1.6]
 
 ### Changed
+
 - Disable skia bindings for UI again. It causes failures in build pipelines and requires extra dependencies.
 
 ## [v6.1.5]
 
 ### Changed
+
 - Update dependencies
 - Fix fan-curve proxy type signatures
 
 ## [v6.1.4]
 
 ### Changed
+
 - Fix git doing me a dirty
 
 ## [v6.1.3]
 
 ### Changed
+
 - Many small bugfixes such as for platform profile switching
 
 ## [v6.1.2]
 
 ### Changed
+
 - Try a slightly different tact to fix charge control slider
 
 ## [v6.1.1]
 
 ### Changed
+
 - Fix aura data matching
 - Fix charge control slider
 
 ## [v6.1.0]
 
 ### Changed
+
 - Update deps
 - Add support for G513RC RGB modes
 - Many UI fixes
@@ -92,12 +139,14 @@
 ## [v6.1.0-rc6]
 
 ### Changed
+
 - Two small fixes, one for `low-power` profile name, and one for base gpu tdp
 - Move to using platform_profile api only (no throttle_thermal_policy)
 
 ## [v6.1.0-rc5]
 
 ### Changed
+
 - Per-AC/DC, per-profile tunings enabled (Battery vs AC power +  platform profile)
 - Add ability to restore PPT defaults
 - Add PPT help dialogue to UI
@@ -106,6 +155,7 @@
 ## [v6.1.0-rc4]
 
 ### Changed
+
 - Bug fix: UI was setting incorrect value for FPPT
 - Bug fix: Re-add callbacks for the throttle and epp settings in UI
 - Bug fix: Fix UI settigns for AniMe Matrix display
@@ -116,23 +166,27 @@
 ## [v6.1.0-rc3]
 
 ### Changed
+
 - Bug fixes
 - Partial support for per-profile CPU tunings (WIP)
 
 ## [v6.1.0-rc2]
 
 ### Added
+
 - asus-armoury driver support. WIP, will be adjusted/changed further
 - More "Slash" display controls
 
 ## [v6.1.0-rc1]
 
 ### Added
+
 - ROG Arion external driver LED support
 - Add GA605W LED layout
 - Add GA605 + GU605 Slash support
 
 ### Changed
+
 - Fix attribute writes. At some point the kernel API seems to have changed.
 - Extremely large refactor of Aura device handling. Should enable easy add of different kinds now.
 - Rename CLI args for aura related properties. This will likely change further as more devices are added
@@ -140,6 +194,7 @@
 ## [v6.0.12]
 
 ### Changed
+
 - Add Ally X aura config
 - Fixes to Ally led power configs
 - Fix CLI led modes
@@ -150,6 +205,7 @@
 ## [v6.0.11]
 
 ### Changed
+
 - Renamed `Strobe` effect to `RainbowCycle` to prevent confusion over what it is
 - Ranamed `Rainbow` effect to `RainbowWave`
 - Cleaned up serde crate deps
@@ -160,6 +216,7 @@
 ## [v6.0.10]
 
 ### Added
+
 - Add the GA401I model to aura_support.
 
 ### Changed
@@ -189,12 +246,15 @@
 ## [v6.0.8]
 
 ### Added
+
 - Add G512L laptop DB entry
 
 ### Changed
+
 - Add more tests to verify things
 
 ### Fix
+
 - asusctl incorrectly assumes fan-curves unsupported. Now fixed.
 - try to fix ROGCC using CPU time.
 
@@ -211,9 +271,11 @@
 ## [v6.0.6]
 
 ### Added
+
 - Add GX650R laptop to aura DB
 
 ### Changed
+
 - Further tweaks to aura init
 - More logging
 - Fix TUF laptop led power
@@ -275,7 +337,7 @@
 
 ### Important note
 
-- The kernel patches from [here](https://lore.kernel.org/platform-driver-x86/20240404001652.86207-1-luke@ljones.dev/) are required. The ppt settings _will_ still apply without the patches but will be called a fail due to the read-back not being implemented (solved with kernel patch). These patches have been upstreamed for kernel 6.10
+- The kernel patches from [here](https://lore.kernel.org/platform-driver-x86/20240404001652.86207-1-luke@ljones.dev/) are required. The ppt settings *will* still apply without the patches but will be called a fail due to the read-back not being implemented (solved with kernel patch). These patches have been upstreamed for kernel 6.10
 - Z13 devices will need these Z13 devices will need [these](https://lore.kernel.org/linux-input/20240416090402.31057-1-luke@ljones.dev/T/#t)
 
 ### Changed
@@ -295,7 +357,7 @@
 
 ### BREAKING
 
-- The aura dbus interface, and well pretty much all dbus interfaces have been changed. The Aura interface in particular works differently to begin implementing _multiple_ aura device support, including _hot-plug_ of devices (USB Aura keybords and others).
+- The aura dbus interface, and well pretty much all dbus interfaces have been changed. The Aura interface in particular works differently to begin implementing *multiple* aura device support, including *hot-plug* of devices (USB Aura keybords and others).
 - All dbus interfaces except Aura are now in the `/org/asuslinux/` path
 - Aura dbus now appear under `/org/asuslinux/<device>` and there may be multiple devices. To find these device you use the `ObjectManager` interface under the `/org/asuslinux` path.
 
@@ -446,7 +508,7 @@
   - Builtin animations
 - In-progress simulators for GA402, GU604 animatrix, optional build and takes a single arg
 - Add `model_override` option to anime config, this is handy for forcing a model for "Unknown" anime, and for simulators
-- Add `mini_led_mode` support to asusd and zbus crates (requires kernel patch https://lkml.org/lkml/2023/6/19/1264)
+- Add `mini_led_mode` support to asusd and zbus crates (requires kernel patch <https://lkml.org/lkml/2023/6/19/1264>)
 - Add `mini_led_mode` toggle to rog-control-center GUI, tray, notifications
 - Add generation of typescript types from the rust types used via dbus using typeshare
 - Add generation of introspection XML from asusd dbus
@@ -885,7 +947,7 @@
 ### BREAKING CHANGES
 
 - Graphics control:
-  - graphics control is pulled out of asusd and moved to new package; https://gitlab.com/asus-linux/supergfxctl
+  - graphics control is pulled out of asusd and moved to new package; <https://gitlab.com/asus-linux/supergfxctl>
 - Proflies:
   - profiles now depend on power-profile-daemon plus kernel patches for support of platform_profile
     - if your system supports fan-curves you will also require upcoming kernel patches for this
@@ -924,7 +986,7 @@
 - Added ability to fade in/out gifs and images for anime. This does break anime configs. See manual for details.
 - Added task to CtrlLed to set the keyboard LED brightness on wake from suspend
   - requires a kernel patch which will be upstreamed and in fedora rog kernel
-- Make gfx change from nvidia to vfio/compute also force-change to integrated _then_
+- Make gfx change from nvidia to vfio/compute also force-change to integrated *then*
   to requested mode
 - Fix invalid gfx status when switching from some modes
 - Fix copy over of serde skipped config values on config reload

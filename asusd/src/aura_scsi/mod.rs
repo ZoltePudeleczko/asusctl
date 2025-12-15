@@ -20,7 +20,7 @@ impl ScsiAura {
         Self { device, config }
     }
 
-    pub async fn lock_config(&self) -> MutexGuard<ScsiConfig> {
+    pub async fn lock_config(&self) -> MutexGuard<'_, ScsiConfig> {
         self.config.lock().await
     }
 

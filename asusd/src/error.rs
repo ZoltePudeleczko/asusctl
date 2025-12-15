@@ -2,9 +2,7 @@ use std::convert::From;
 use std::fmt;
 
 use config_traits::ron;
-use rog_anime::error::AnimeError;
 use rog_platform::error::PlatformError;
-use rog_profiles::error::ProfileError;
 use rog_slash::error::SlashError;
 
 #[derive(Debug)]
@@ -22,7 +20,6 @@ pub enum RogError {
     MissingFunction(String),
     MissingLedBrightNode(String, std::io::Error),
     ReloadFail(String),
-    Profiles(ProfileError),
     Initramfs(String),
     Modprobe(String),
     Io(std::io::Error),
@@ -31,7 +28,6 @@ pub enum RogError {
     AuraEffectNotSupported,
     NoAuraKeyboard,
     NoAuraNode,
-    Anime(AnimeError),
     Slash(SlashError),
     Platform(PlatformError),
     SystemdUnitAction(String),
@@ -62,7 +58,6 @@ impl fmt::Display for RogError {
                 path, error
             ),
             RogError::ReloadFail(deets) => write!(f, "Reload error: {}", deets),
-            RogError::Profiles(deets) => write!(f, "Profile error: {}", deets),
             RogError::Initramfs(detail) => write!(f, "Initiramfs error: {}", detail),
             RogError::Modprobe(detail) => write!(f, "Modprobe error: {}", detail),
             RogError::Io(detail) => write!(f, "std::io error: {}", detail),
@@ -73,7 +68,6 @@ impl fmt::Display for RogError {
             RogError::AuraEffectNotSupported => write!(f, "Aura effect not supported"),
             RogError::NoAuraKeyboard => write!(f, "No supported Aura keyboard"),
             RogError::NoAuraNode => write!(f, "No Aura keyboard node found"),
-            RogError::Anime(deets) => write!(f, "AniMe Matrix error: {}", deets),
             RogError::Slash(deets) => write!(f, "Slash error: {}", deets),
             RogError::Platform(deets) => write!(f, "Asus Platform error: {}", deets),
             RogError::SystemdUnitAction(action) => {
@@ -93,18 +87,6 @@ impl fmt::Display for RogError {
 }
 
 impl std::error::Error for RogError {}
-
-impl From<ProfileError> for RogError {
-    fn from(err: ProfileError) -> Self {
-        RogError::Profiles(err)
-    }
-}
-
-impl From<AnimeError> for RogError {
-    fn from(err: AnimeError) -> Self {
-        RogError::Anime(err)
-    }
-}
 
 impl From<SlashError> for RogError {
     fn from(err: SlashError) -> Self {

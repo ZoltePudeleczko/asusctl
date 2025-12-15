@@ -1,5 +1,7 @@
 # Contributing
 
+> **⚠️ FORK NOTICE:** This is a fork of the original asusctl project, built and tested with **Pop!_OS 24.04 LTS** and **ROG Zephyrus G16** in mind. This fork has removed GUI and AniMe Matrix features. It may work on other configurations but should be used with caution. For contributions related to removed features, please consider contributing to the original project at [asus-linux/asusctl](https://gitlab.com/asus-linux/asusctl).
+
 When contributing to this repository, please first discuss the change you wish to make via issue,
 email, or any other method with the owners of this repository before making a change.
 
@@ -73,7 +75,7 @@ further defined and clarified by project maintainers.
 ### Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project team at luke@ljones.dev. All
+reported by contacting the project maintainers. All
 complaints will be reviewed and investigated and will result in a response that
 is deemed necessary and appropriate to the circumstances. The project team is
 obligated to maintain confidentiality with regard to the reporter of an incident.
