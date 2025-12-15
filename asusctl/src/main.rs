@@ -75,10 +75,7 @@ fn main() {
     }
 }
 
-fn print_error_help(
-    err: &dyn std::error::Error,
-    supported_interfaces: &[String],
-) {
+fn print_error_help(err: &dyn std::error::Error, supported_interfaces: &[String]) {
     check_service("asusd");
     println!("\nError: {}\n", err);
     print_info();
@@ -275,7 +272,6 @@ fn do_parsed(
 
     Ok(())
 }
-
 
 fn handle_slash(cmd: &SlashCommand) -> Result<(), Box<dyn std::error::Error>> {
     if (cmd.brightness.is_none()
@@ -640,4 +636,3 @@ fn check_systemd_unit_enabled(name: &str) -> bool {
     }
     false
 }
-

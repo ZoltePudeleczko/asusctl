@@ -1,11 +1,11 @@
 #![deny(unused_must_use)]
-/// Configuration loading, saving
-pub mod config;
 pub mod aura_laptop;
 pub mod aura_manager;
 pub mod aura_scsi;
 pub mod aura_slash;
 pub mod aura_types;
+/// Configuration loading, saving
+pub mod config;
 pub mod error;
 
 use std::future::Future;

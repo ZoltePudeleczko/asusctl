@@ -1,5 +1,8 @@
 # `asusctl` for ASUS ROG (Ubuntu/Pop!_OS minimal fork)
 
+[![GitHub release](https://img.shields.io/github/v/release/ZoltePudeleczko/asusctl.svg)](https://github.com/ZoltePudeleczko/asusctl/releases)
+[![CI](https://github.com/ZoltePudeleczko/asusctl/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ZoltePudeleczko/asusctl/actions/workflows/ci.yml)
+
 > **⚠️ FORK NOTICE:** This is a fork of the original `asusctl` project. Many features from the original project have been removed, including the GUI (`rog-control-center`), AniMe Matrix display support (`rog-anime`), simulators, power profiles, and fan curves. This fork keeps only keyboard backlight (aura) and LED slash functionality, expecting the distro (like `system76-power` on Pop!_OS) to handle power profiles and fan curves.
 
 > **🎯 TARGET CONFIGURATION:** This fork is built and tested with **Pop!_OS 24.04 LTS** and **ROG Zephyrus G16** in mind. It may work on other Ubuntu-based distributions and ASUS ROG laptops, but should be used with caution. Compatibility with other configurations is not guaranteed.

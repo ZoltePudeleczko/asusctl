@@ -47,4 +47,3 @@ pub struct LedModeCommand {
     #[options(command)]
     pub command: Option<SetAuraBuiltin>,
 }
-
