@@ -53,7 +53,7 @@ async fn start_daemon() -> Result<(), Box<dyn Error>> {
     // println!("{:?}", supported.supported_functions());
 
     // Start zbus server
-    let mut server = Connection::system().await?;
+    let server = Connection::system().await?;
     server.object_server().at("/", ObjectManager).await.unwrap();
 
     let config = Config::new().load();
