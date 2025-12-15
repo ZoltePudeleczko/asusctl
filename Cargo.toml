@@ -1,12 +1,12 @@
 [workspace.package]
-version = "6.1.12"
+version = "6.1.12-minfork"
 rust-version = "1.82"
 license = "MPL-2.0"
 readme = "README.md"
 authors = ["Luke <luke@ljones.dev>"]
 repository = "https://gitlab.com/asus-linux/asusctl"
 homepage = "https://gitlab.com/asus-linux/asusctl"
-description = "Laptop feature control for ASUS ROG laptops and others"
+description = "Laptop feature control for ASUS ROG laptops and others (Ubuntu/PopOS fork)"
 edition = "2021"
 
 [workspace]

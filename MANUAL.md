@@ -1,4 +1,6 @@
-# asusctrl manual
+# asusctl manual
+
+> **⚠️ FORK NOTICE:** This manual is for a fork of asusctl optimized for Ubuntu/Pop!_OS. This fork is built and tested with **Pop!_OS 24.04 LTS** and **ROG Zephyrus G16** in mind. Features related to GUI (`rog-control-center`), AniMe Matrix displays, power profiles, and fan curves have been removed in this fork. This fork focuses solely on keyboard backlight (aura) and LED slash control. It may work on other configurations but should be used with caution.
 
 **NOTE:** this manual is in need of an update in some places. If you find issues please file issue reports.
 
@@ -8,7 +10,7 @@ but can also be used with non-asus laptops with reduced features.
 ## Programs Available
 
 - `asusd`: The main system daemon. It is autostarted by a udev rule and systemd unit.
-- `asusd-user`: The user level daemon. Currently will run an anime sequence, with RGB keyboard sequences soon.
+- `asusd-user`: The user level daemon for per-key RGB keyboard lighting.
 - `asusctl`: The CLI for interacting with the system daemon
 
 ## `asusd`
@@ -17,30 +19,12 @@ but can also be used with non-asus laptops with reduced features.
 
 The functionality that `asusd` exposes is:
 
-- anime control
 - led keyboard control (aura)
-- charge limiting
-- bios/efivar control
-- power profile switching
-- fan curves (if supported, this is auto-detected)
+- LED slash display control
 
 each of these will be detailed in sections.
 
-### AniMe control
-
-Controller for the fancy AniMe matrix display on the lid of some machines. This controller is a work in progress.
-
-#### Config options
-
-If you have an AniMe device a few system-level config options are enabled for you in `/etc/asusd/anime.conf`;
-
-1. `"system": [],`: currently unused, is intended to be a default continuous sequence in future versions
-2. `"boot": [],`: a sequence that plays on system boot (when asusd is loaded)
-3. `"wake": [],`: a sequence that plays when waking from suspend
-4. `"shutdown": [],`: a sequence that plays when shutdown begins
-5. `"brightness": <FLOAT>`: global brightness control, where `<FLOAT> is 0.0-1.0
-
-Some default examples are provided but are minimal. The full range of configuration options will be covered in another section of this manual.
+> **Note:** AniMe Matrix display control, power profiles, fan curves, charge limiting, and BIOS controls have been removed in this fork. For those features, please refer to the original project or use distribution tools (e.g., `system76-power` on Pop!_OS for power profiles and fan curves).
 
 ### Led keyboard control
 
@@ -50,49 +34,11 @@ The LED controller (e.g, aura) enables setting many of the factory modes availab
 
 There are over 80 supported laptops as of 01-01-2023. Please see [the rog-aura crate readme for further details](/rog-aura/README.md).
 
-### Charge control
+### LED Slash display control
 
-Almost all modern ASUS laptops have charging limit control now. This can be controlled in `/etc/asusd/asusd.conf`.
+Some ASUS ROG laptops feature a LED slash display (a small LED strip or display). This fork supports controlling this display through the LED slash controller.
 
-```json
-"bat_charge_limit": 80,
-```
-
-where the number is a percentage.
-
-### Bios control
-
-Some options that you find in Armory Crate are available under this controller, so far there is:
-
-- POST sound: this is the sound you hear on bios boot post
-- GPU MUX: this controls if the dGPU is the _only_ GPU, making it the main GPU and disabling the iGPU
-
-These options are not written to the config file as they are stored in efivars. The only way to change these is to use the exposed safe dbus methods, or use the `asusctl` CLI tool.
-
-### Profiles
-
-asusctl can support setting a power profile via platform_profile drivers. This requires [power-profiles-daemon](https://gitlab.freedesktop.org/hadess/power-profiles-daemon) v0.10.0 minimum. It also requires the kernel patch for platform_profile support to be applied form [here](https://lkml.org/lkml/2021/8/18/1022) - this patch is merged to 5.15 kernel upstream.
-
-A common use of asusctl is to bind the `fn+f5` (fan) key to `asusctl profile -n` to cycle through the 3 profiles:
-
-1. Balanced
-2. Performance
-3. Quiet
-
-#### Fan curves
-
-Fan curve support requires a laptop that supports it (this is detected automatically) and the kernel patch from [here](https://lkml.org/lkml/2021/10/23/250) which is accepted for the 5.17 kernel release .
-
-The fan curve format can be of varying formats:
-
-- `30c:0%,40c:5%,50c:10%,60c:20%,70c:35%,80c:55%,90c:65%,100c:65%"`
-- `30:0,40:5,50:10,60:20,70:35,80:55,90:65,100:65"`
-- `30 0,40 5,50 10,60 20,70 35,80 55,90 65,100 65"`
-- `30 0 40 5 50 10 60 20 70 35 80 55 90 65 100 65"`
-
-the order must always be the same "temperature:percentage", lowest from left to rigth being highest.
-
-The config file is located at `/etc/asusd/profile.conf` and is self-descriptive. On first run it is populated with the system EC defaults.
+> **Note:** Charge control, BIOS controls (POST sound, GPU MUX), power profiles, and fan curves have been removed in this fork. For power profiles and fan curves, use distribution tools like `system76-power` on Pop!_OS. For other features, refer to the original project.
 
 ### Support controller
 
@@ -100,13 +46,13 @@ There is one more controller; the support controller. The sole pupose of this co
 
 ## asusd-user
 
-`asusd-user` is a usermode daemon. The intended purpose is to provide a method for users to run there own custom per-key keyboard effects and modes, AniMe sequences, and possibly their own profiles - all without overwriting the _base_ system config. As such some parts of the system daemon will migrate to the user daemon over time with the expectation that the Linux system runs both.
+`asusd-user` is a usermode daemon. The intended purpose is to provide a method for users to run their own custom per-key keyboard effects and modes - all without overwriting the _base_ system config.
 
-As of now only AniMe is active in this with configuration in `~/.config/rog/`. On first run defaults are created that are intended to work as examples.
+In this fork, `asusd-user` focuses on per-key RGB keyboard lighting functionality. AniMe Matrix support has been removed.
 
 The main config is `~/.config/rog/rog-user.cfg`
 
-#### Config options: Aura, per-key and zoned
+### Config options: Aura, per-key and zoned
 
 I'm unsure of how many laptops this works on, so please try it.
 
@@ -213,177 +159,9 @@ Single zone example:
 ```
 
 At the moment there are only three effects available as shown in the example. More will come in the future
-but this may take me some time.
+but this may take some time.
 
-#### Config options: AniMe
-
-`~/.config/rog/rog-user.cfg` contains a setting `"active_anime": "<FILENAME>"` where `<FILENAME>` is the name of the AniMe config to use, located in the same directory and without the file postfix, e.g, `"active_anime": "anime-doom"`
-
-An AniMe config itself is a file with contents:
-
-```json
-{
-  "name": "<FILENAME>",
-  "anime": []
-}
-```
-
-`<FILENAME>` is used as a reference internally. `"anime": []` is an array of sequences (WIP).
-
-##### "anime" array options
-
-Each object in the array can be one of:
-
-1. AsusAnimation
-2. ImageAnimation
-3. Image
-4. Pause
-
-##### AsusAnimation
-
-`AsusAnimation` is specifically for running the gif files that Armory Crate comes with. `asusctl` includes all of these in `/usr/share/asusd/anime/asus/`
-
-```json
-      "AsusAnimation": {
-        "file": "<FILE_PATH>",
-        "time": <TIME>,
-        "brightness": <FLOAT>
-      }
-```
-
-##### AsusImage
-
-Virtually the same as `AsusAnimation` but for png files, typically created in the same "slanted" style using a template (`diagonal-template.png`) as the ASUS gifs for pixel perfection.
-
-```json
-      "AsusImage": {
-        "file": "<FILE_PATH>",
-        "time": <TIME>,
-        "brightness": <FLOAT>
-      }
-```
-
-##### ImageAnimation
-
-`ImageAnimation` can play _any_ gif of any size.
-
-```json
-      "ImageAnimation": {
-        "file": "<FILE_PATH>",
-        "scale": <FLOAT>,
-        "angle": <FLOAT>,
-        "translation": [
-          <FLOAT>,
-          <FLOAT>
-        ],
-        "time": <TIME>,
-        "brightness": <FLOAT>
-      }
-    },
-```
-
-##### Image
-
-`Image` currently requires 8bit greyscale png. It will be able to use most in future.
-
-```json
-    {
-      "Image": {
-        "file": "<FILE_PATH>",
-        "scale": <FLOAT>,
-        "angle": <FLOAT>,
-        "translation": [
-          <FLOAT>,
-          <FLOAT>
-        ],
-        "time": <TIME>,
-        "brightness": <FLOAT>
-      }
-    },
-```
-
-##### Pause
-
-A `Pause` is handy for after an `Image` to hold the `Image` on the AniMe for a period.
-
-```json
-    {
-      "Pause": {
-        "secs": <INT>,
-        "nanos": <INT>
-      }
-    },
-```
-
-##### Options for objects
-
-**<FILE_PATH>**
-
-Must be full path: `"/usr/share/asusd/anime/asus/gaming/Controller.gif"` or `/home/luke/Downloads/random.gif`.
-
-**<FLOAT>**
-
-A number from 0.0-1.0.
-
-- `brightness`: If it is brightness it is combined with the system daemon global brightness
-- `scale`: 1.0 is the original size with lower number shrinking, larger growing
-- `angle`: Rotation angle in radians
-- `translation`: Shift the image X -/+, and y -/+
-
-**<TIME>**
-
-Time is the length of time to run the gif for:
-
-```json
-        "time": {
-          "Time": {
-            "secs": 5,
-            "nanos": 0
-          }
-        },
-```
-
-A cycle is how many gif loops to run:
-
-```json
-        "time": {
-          "Cycles": 2
-        },
-```
-
-`Infinite` means that this gif will never end:
-
-```json
-        "time": "Infinite",
-```
-
-`Fade` allows an image or gif to fade in and out, and remain at max brightness to n time:
-
-```json
-        "time": {
-          "Fade": {
-            "fade_in": {
-              "secs": 2,
-              "nanos": 0
-            },
-            "show_for": {
-              "secs": 1,
-              "nanos": 0
-            },
-            "fade_out": {
-              "secs": 2,
-              "nanos": 0
-            }
-          }
-        },
-```
-
-`show_for` can be `null`, if it is `null` then the `show_for` becomes `gif_time_length - fade_in - fade_out`.
-This is period for which the gif or image will be max brightness (as set).
-
-**<INT>**
-
-A plain non-float integer.
+> **Note:** AniMe Matrix configuration options have been removed in this fork. For AniMe support, please refer to the original project.
 
 ## asusctl
 
@@ -397,41 +175,42 @@ Most commands are self-explanatory.
 
 Commands are given by:
 
-```
+```bash
 asusctl <option> <command> <command-options>
 ```
 
 Help is available through:
 
-```
+```bash
 asusctl --help
 asusctl <command> --help
 ```
 
 Some commands may have subcommands:
 
-```
+```bash
 asusctl <command> <subcommand> --help
 ```
 
 ### Keybinds
 
 To switch to next/previous Aura modes you will need to bind both the aura keys (if available) to one of:
-**Next**
 
-```
+### Next
+
+```bash
 asusctl aura -n
 ```
 
-**Previous**
+### Previous
 
-```
+```bash
 asusctl aura -p
 ```
 
-To switch Fan/Thermal profiles you need to bind the Fn+F5 key to `asusctl profile -n`.
+> **Note:** Power profile switching has been removed in this fork. Use your distribution's power management tools (e.g., `system76-power` on Pop!_OS) to switch power profiles.
 
-# License & Trademarks
+## License & Trademarks
 
 Mozilla Public License 2 (MPL-2.0)
 

@@ -1,6 +1,6 @@
-# Updating Services After Removing Anime Code
+# Updating Services
 
-To ensure the systemd services use the updated version without anime support, follow these steps:
+To ensure the systemd services use the updated version, follow these steps:
 
 ## 1. Rebuild the Project
 
@@ -33,6 +33,7 @@ sudo make install DESTDIR=/custom/path
 ```
 
 This will:
+
 - Install the updated `asusctl`, `asusd`, and `asusd-user` binaries to `/usr/bin/`
 - Install/update the systemd service files to `/usr/lib/systemd/system/` and `/usr/lib/systemd/user/`
 
@@ -102,17 +103,4 @@ journalctl --user -u asusd-user -b
 # Follow logs in real-time
 sudo journalctl -u asusd -f
 journalctl --user -u asusd-user -f
-```
-
-## Verify Anime Removal
-
-You can verify that anime support has been removed:
-
-```bash
-# Check that anime command is no longer available
-asusctl anime --help
-# Should show: "Error: unknown command 'anime'"
-
-# Check supported interfaces (should not include xyz.ljones.Anime)
-asusctl --show-supported
 ```

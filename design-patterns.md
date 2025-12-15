@@ -1,5 +1,7 @@
 # Daemon
 
+> **Note:** The examples in this document use `CtrlAnime` as a reference, but AniMe functionality has been removed in this fork. The patterns shown here apply to any controller implementation.
+
 ## Controller pattern
 
 There are a series of traits in the daemon for use with controller objects. Not all traits are required:
