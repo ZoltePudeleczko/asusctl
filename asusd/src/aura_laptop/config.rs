@@ -365,6 +365,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // Requires aura_support.ron file to be available
     fn verify_0x1866_g531i() {
         std::env::set_var("BOARD_NAME", "G513I");
         let mut config = AuraConfig::new("1866");
@@ -390,6 +391,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // Requires aura_support.ron file to be available
     fn verify_0x19b6_g634j() {
         std::env::set_var("BOARD_NAME", "G634J");
         let mut config = AuraConfig::new("19b6");
