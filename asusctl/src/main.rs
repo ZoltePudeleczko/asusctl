@@ -8,7 +8,7 @@ use anime_cli::{AnimeActions, AnimeCommand};
 use aura_cli::{LedPowerCommand1, LedPowerCommand2};
 use dmi_id::DMIID;
 use gumdrop::{Opt, Options};
-use log::{error, info};
+use log::error;
 use rog_anime::usb::get_anime_type;
 use rog_anime::{AnimTime, AnimeDataBuffer, AnimeDiagonal, AnimeGif, AnimeImage, AnimeType, Vec2};
 use rog_aura::keyboard::{AuraPowerState, LaptopAuraPower};
