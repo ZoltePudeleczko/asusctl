@@ -3,19 +3,12 @@ use std::error::Error;
 use std::sync::Arc;
 
 use ::zbus::Connection;
-use asusd::asus_armoury::start_attributes_zbus;
 use asusd::aura_manager::DeviceManager;
 use asusd::config::Config;
-use asusd::ctrl_backlight::CtrlBacklight;
-use asusd::ctrl_fancurves::CtrlFanCurveZbus;
-use asusd::ctrl_platform::CtrlPlatform;
-use asusd::{print_board_info, start_tasks, CtrlTask, ZbusRun, DBUS_NAME};
+use asusd::{print_board_info, DBUS_NAME};
 use config_traits::{StdConfig, StdConfigLoad2};
 use futures_util::lock::Mutex;
-use log::{error, info};
-use rog_platform::asus_armoury::FirmwareAttributes;
-use rog_platform::platform::RogPlatform;
-use rog_platform::power::AsusPower;
+use log::info;
 use zbus::fdo::ObjectManager;
 
 #[tokio::main]
@@ -47,7 +40,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("    rog-anime v{}", rog_anime::VERSION);
     info!("    rog-slash v{}", rog_slash::VERSION);
     info!("     rog-aura v{}", rog_aura::VERSION);
-    info!(" rog-profiles v{}", rog_profiles::VERSION);
     info!("rog-platform v{}", rog_platform::VERSION);
 
     start_daemon().await?;
@@ -65,58 +57,7 @@ async fn start_daemon() -> Result<(), Box<dyn Error>> {
     server.object_server().at("/", ObjectManager).await.unwrap();
 
     let config = Config::new().load();
-    let cfg_path = config.file_path();
     let config = Arc::new(Mutex::new(config));
-
-    // supported.add_to_server(&mut connection).await;
-    let platform = RogPlatform::new()?; // TODO: maybe needs async mutex?
-    let power = AsusPower::new()?; // TODO: maybe needs async mutex?
-    let attributes = FirmwareAttributes::new();
-    start_attributes_zbus(
-        &server,
-        platform.clone(),
-        power.clone(),
-        attributes.clone(),
-        config.clone(),
-    )
-    .await?;
-
-    match CtrlFanCurveZbus::new() {
-        Ok(ctrl) => {
-            let sig_ctx = CtrlFanCurveZbus::signal_context(&server)?;
-            start_tasks(ctrl, &mut server, sig_ctx).await?;
-        }
-        Err(err) => {
-            error!("FanCurves: {}", err);
-        }
-    }
-
-    match CtrlBacklight::new(config.clone()) {
-        Ok(backlight) => {
-            backlight.start_watch_primary().await?;
-            backlight.add_to_server(&mut server).await;
-        }
-        Err(err) => {
-            error!("Backlight: {}", err);
-        }
-    }
-
-    match CtrlPlatform::new(
-        platform,
-        power,
-        attributes,
-        config.clone(),
-        &cfg_path,
-        CtrlPlatform::signal_context(&server)?,
-    ) {
-        Ok(ctrl) => {
-            let sig_ctx = CtrlPlatform::signal_context(&server)?;
-            start_tasks(ctrl, &mut server, sig_ctx).await?;
-        }
-        Err(err) => {
-            error!("CtrlPlatform: {}", err);
-        }
-    }
 
     let _ = DeviceManager::new(server.clone()).await?;
 

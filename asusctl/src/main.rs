@@ -7,27 +7,19 @@ use std::thread::sleep;
 use anime_cli::{AnimeActions, AnimeCommand};
 use aura_cli::{LedPowerCommand1, LedPowerCommand2};
 use dmi_id::DMIID;
-use fan_curve_cli::FanCurveCommand;
 use gumdrop::{Opt, Options};
 use log::{error, info};
 use rog_anime::usb::get_anime_type;
 use rog_anime::{AnimTime, AnimeDataBuffer, AnimeDiagonal, AnimeGif, AnimeImage, AnimeType, Vec2};
 use rog_aura::keyboard::{AuraPowerState, LaptopAuraPower};
 use rog_aura::{self, AuraDeviceType, AuraEffect, PowerZones};
-use rog_dbus::asus_armoury::AsusArmouryProxyBlocking;
 use rog_dbus::list_iface_blocking;
 use rog_dbus::scsi_aura::ScsiAuraProxyBlocking;
 use rog_dbus::zbus_anime::AnimeProxyBlocking;
 use rog_dbus::zbus_aura::AuraProxyBlocking;
-use rog_dbus::zbus_backlight::BacklightProxyBlocking;
-use rog_dbus::zbus_fan_curves::FanCurvesProxyBlocking;
-use rog_dbus::zbus_platform::PlatformProxyBlocking;
 use rog_dbus::zbus_slash::SlashProxyBlocking;
-use rog_platform::platform::{PlatformProfile, Properties};
-use rog_profiles::error::ProfileError;
 use rog_scsi::AuraMode;
 use rog_slash::SlashMode;
-use ron::ser::PrettyConfig;
 use scsi_cli::ScsiCommand;
 use zbus::blocking::proxy::ProxyImpl;
 use zbus::blocking::Connection;
@@ -39,7 +31,6 @@ use crate::slash_cli::SlashCommand;
 mod anime_cli;
 mod aura_cli;
 mod cli_opts;
-mod fan_curve_cli;
 mod scsi_cli;
 mod slash_cli;
 
@@ -70,68 +61,37 @@ fn main() {
     };
 
     let conn = Connection::system().unwrap();
-    if let Ok(platform_proxy) = PlatformProxyBlocking::new(&conn).map_err(|e| {
-        check_service("asusd");
-        println!("\nError: {e}\n");
-        print_info();
-    }) {
-        let asusd_version = match platform_proxy.version() {
-            Ok(version) => version,
-            Err(e) => {
-                error!(
-                    "Could not get asusd version: {e:?}\nIs asusd.service running? {}",
-                    check_service("asusd")
-                );
-                return;
-            }
-        };
-
-        if asusd_version != self_version {
-            println!("Version mismatch: asusctl = {self_version}, asusd = {asusd_version}");
+    let supported_interfaces = match list_iface_blocking() {
+        Ok(ifaces) => ifaces,
+        Err(e) => {
+            error!("Could not get supported interfaces: {e:?}");
+            check_service("asusd");
+            println!("\nError: {e}\n");
+            print_info();
             return;
         }
+    };
 
-        let supported_properties = match platform_proxy.supported_properties() {
-            Ok(props) => props,
-            Err(e) => {
-                error!("Could not get supported properties: {e:?}");
-                return;
-            }
-        };
-        let supported_interfaces = match list_iface_blocking() {
-            Ok(ifaces) => ifaces,
-            Err(e) => {
-                error!("Could not get supported interfaces: {e:?}");
-                return;
-            }
-        };
+    if parsed.version {
+        println!("asusctl v{}", env!("CARGO_PKG_VERSION"));
+        println!();
+        print_info();
+    }
 
-        if parsed.version {
-            println!("asusctl v{}", env!("CARGO_PKG_VERSION"));
-            println!();
-            print_info();
-        }
-
-        if let Err(err) = do_parsed(&parsed, &supported_interfaces, &supported_properties, conn) {
-            print_error_help(&*err, &supported_interfaces, &supported_properties);
-        }
+    if let Err(err) = do_parsed(&parsed, &supported_interfaces, conn) {
+        print_error_help(&*err, &supported_interfaces);
     }
 }
 
 fn print_error_help(
     err: &dyn std::error::Error,
     supported_interfaces: &[String],
-    supported_properties: &[Properties],
 ) {
     check_service("asusd");
     println!("\nError: {}\n", err);
     print_info();
     println!();
     println!("Supported interfaces:\n\n{:#?}\n", supported_interfaces);
-    println!(
-        "Supported properties on Platform:\n\n{:#?}\n",
-        supported_properties
-    );
 }
 
 fn print_info() {
@@ -201,32 +161,20 @@ where
 fn do_parsed(
     parsed: &CliStart,
     supported_interfaces: &[String],
-    supported_properties: &[Properties],
     conn: Connection,
 ) -> Result<(), Box<dyn std::error::Error>> {
     match &parsed.command {
         Some(CliCommand::Aura(mode)) => handle_led_mode(mode)?,
         Some(CliCommand::AuraPowerOld(pow)) => handle_led_power1(pow)?,
         Some(CliCommand::AuraPower(pow)) => handle_led_power2(pow)?,
-        Some(CliCommand::Profile(cmd)) => {
-            handle_throttle_profile(&conn, supported_properties, cmd)?
-        }
-        Some(CliCommand::FanCurve(cmd)) => {
-            handle_fan_curve(&conn, cmd)?;
-        }
-        Some(CliCommand::Graphics(_)) => do_gfx(),
         Some(CliCommand::Anime(cmd)) => handle_anime(cmd)?,
         Some(CliCommand::Slash(cmd)) => handle_slash(cmd)?,
         Some(CliCommand::Scsi(cmd)) => handle_scsi(cmd)?,
-        Some(CliCommand::Armoury(cmd)) => handle_armoury_command(cmd)?,
-        Some(CliCommand::Backlight(cmd)) => handle_backlight(cmd)?,
         None => {
             if (!parsed.show_supported
                 && parsed.kbd_bright.is_none()
-                && parsed.chg_limit.is_none()
                 && !parsed.next_kbd_bright
-                && !parsed.prev_kbd_bright
-                && !parsed.one_shot_chg)
+                && !parsed.prev_kbd_bright)
                 || parsed.help
             {
                 println!("{}", CliStart::usage());
@@ -245,12 +193,6 @@ fn do_parsed(
                         };
                     let commands: Vec<String> = cmdlist.lines().map(|s| s.to_owned()).collect();
                     for command in commands.iter().filter(|command| {
-                        if command.trim().starts_with("fan-curve")
-                            && !supported_interfaces.contains(&"xyz.ljones.FanCurves".to_string())
-                        {
-                            return false;
-                        }
-
                         if command.trim().starts_with("aura")
                             && !supported_interfaces.contains(&"xyz.ljones.Aura".to_string())
                         {
@@ -265,24 +207,6 @@ fn do_parsed(
 
                         if command.trim().starts_with("slash")
                             && !supported_interfaces.contains(&"xyz.ljones.Slash".to_string())
-                        {
-                            return false;
-                        }
-
-                        if command.trim().starts_with("platform")
-                            && !supported_interfaces.contains(&"xyz.ljones.Platform".to_string())
-                        {
-                            return false;
-                        }
-
-                        if command.trim().starts_with("armoury")
-                            && !supported_interfaces.contains(&"xyz.ljones.AsusArmoury".to_string())
-                        {
-                            return false;
-                        }
-
-                        if command.trim().starts_with("backlight")
-                            && !supported_interfaces.contains(&"xyz.ljones.Backlight".to_string())
                         {
                             return false;
                         }
@@ -349,10 +273,6 @@ fn do_parsed(
 
     if parsed.show_supported {
         println!("Supported Core Functions:\n{:#?}", supported_interfaces);
-        println!(
-            "Supported Platform Properties:\n{:#?}",
-            supported_properties
-        );
         if let Ok(aura) = find_iface::<AuraProxyBlocking>("xyz.ljones.Aura") {
             // TODO: multiple RGB check
             let bright = aura.first().unwrap().supported_brightness()?;
@@ -365,64 +285,6 @@ fn do_parsed(
             println!("Supported Aura Power Zones:\n{:#?}", power);
         } else {
             println!("No aura interface found");
-        }
-    }
-
-    if let Some(chg_limit) = parsed.chg_limit {
-        let proxy = PlatformProxyBlocking::new(&conn)?;
-        proxy.set_charge_control_end_threshold(chg_limit)?;
-    }
-
-    if parsed.one_shot_chg {
-        let proxy = PlatformProxyBlocking::new(&conn)?;
-        proxy.one_shot_full_charge()?;
-    }
-
-    Ok(())
-}
-
-fn do_gfx() {
-    println!(
-        "Please use supergfxctl for graphics switching. supergfxctl is the result of making \
-         asusctl graphics switching generic so all laptops can use it"
-    );
-    println!("This command will be removed in future");
-}
-
-fn handle_backlight(cmd: &BacklightCommand) -> Result<(), Box<dyn std::error::Error>> {
-    if (cmd.screenpad_brightness.is_none()
-        && cmd.screenpad_gamma.is_none()
-        && cmd.sync_screenpad_brightness.is_none())
-        || cmd.help
-    {
-        println!("Missing arg or command\n\n{}", cmd.self_usage());
-
-        let backlights = find_iface::<BacklightProxyBlocking>("xyz.ljones.Backlight")?;
-        for backlight in backlights {
-            println!("Current screenpad settings:");
-            println!("  Brightness: {}", backlight.screenpad_brightness()?);
-            println!("  Gamma: {}", backlight.screenpad_gamma()?);
-            println!(
-                "  Sync with primary: {}",
-                backlight.screenpad_sync_with_primary()?
-            );
-        }
-
-        return Ok(());
-    }
-
-    let backlights = find_iface::<BacklightProxyBlocking>("xyz.ljones.Backlight")?;
-    for backlight in backlights {
-        if let Some(brightness) = cmd.screenpad_brightness {
-            backlight.set_screenpad_brightness(brightness)?;
-        }
-
-        if let Some(gamma) = cmd.screenpad_gamma {
-            backlight.set_screenpad_gamma(gamma.to_string().as_str())?;
-        }
-
-        if let Some(sync) = cmd.sync_screenpad_brightness {
-            backlight.set_screenpad_sync_with_primary(sync)?;
         }
     }
 
@@ -969,129 +831,6 @@ fn handle_led_power2(power: &LedPowerCommand2) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
-fn handle_throttle_profile(
-    conn: &Connection,
-    supported: &[Properties],
-    cmd: &ProfileCommand,
-) -> Result<(), Box<dyn std::error::Error>> {
-    if !supported.contains(&Properties::ThrottlePolicy) {
-        println!("Profiles not supported by either this kernel or by the laptop.");
-        return Err(ProfileError::NotSupported.into());
-    }
-
-    if !cmd.next && !cmd.list && cmd.profile_set.is_none() && !cmd.profile_get {
-        if !cmd.help {
-            println!("Missing arg or command\n");
-        }
-        println!("{}", ProfileCommand::usage());
-
-        if let Some(lst) = cmd.self_command_list() {
-            println!("\n{}", lst);
-        }
-        return Ok(());
-    }
-
-    let proxy = PlatformProxyBlocking::new(conn)?;
-    let current = proxy.platform_profile()?;
-    let choices = proxy.platform_profile_choices()?;
-
-    if cmd.next {
-        proxy.set_platform_profile(PlatformProfile::next(current, &choices))?;
-    } else if let Some(profile) = cmd.profile_set {
-        proxy.set_platform_profile(profile)?;
-    }
-
-    if cmd.list {
-        for p in &choices {
-            println!("{:?}", p);
-        }
-    }
-
-    if cmd.profile_get {
-        println!("Active profile is {current:?}");
-    }
-
-    Ok(())
-}
-
-fn handle_fan_curve(
-    conn: &Connection,
-    cmd: &FanCurveCommand,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let Ok(fan_proxy) = FanCurvesProxyBlocking::new(conn).map_err(|e| {
-        println!("Fan-curves not supported by either this kernel or by the laptop: {e:?}");
-    }) else {
-        return Err(ProfileError::NotSupported.into());
-    };
-
-    if !cmd.get_enabled && !cmd.default && cmd.mod_profile.is_none() {
-        if !cmd.help {
-            println!("Missing arg or command\n");
-        }
-        println!("{}", FanCurveCommand::usage());
-
-        if let Some(lst) = cmd.self_command_list() {
-            println!("\n{}", lst);
-        }
-        return Ok(());
-    }
-
-    if (cmd.enable_fan_curves.is_some() || cmd.fan.is_some() || cmd.data.is_some())
-        && cmd.mod_profile.is_none()
-    {
-        println!(
-            "--enable-fan-curves, --enable-fan-curve, --fan, and --data options require \
-             --mod-profile"
-        );
-        return Ok(());
-    }
-
-    let plat_proxy = PlatformProxyBlocking::new(conn)?;
-    if cmd.get_enabled {
-        let profile = plat_proxy.platform_profile()?;
-        let curves = fan_proxy.fan_curve_data(profile)?;
-        for curve in curves.iter() {
-            println!("{}", String::from(curve));
-        }
-    }
-
-    if cmd.default {
-        let active = plat_proxy.platform_profile()?;
-        fan_proxy.set_curves_to_defaults(active)?;
-    }
-
-    if let Some(profile) = cmd.mod_profile {
-        if cmd.enable_fan_curves.is_none() && cmd.data.is_none() {
-            let data = fan_proxy.fan_curve_data(profile)?;
-            let ron = ron::ser::to_string_pretty(&data, PrettyConfig::new().depth_limit(4))?;
-            println!("\nFan curves for {:?}\n\n{}", profile, ron);
-        }
-
-        if let Some(enabled) = cmd.enable_fan_curves {
-            fan_proxy.set_fan_curves_enabled(profile, enabled)?;
-        }
-
-        if let Some(enabled) = cmd.enable_fan_curve {
-            if let Some(fan) = cmd.fan {
-                fan_proxy.set_profile_fan_curve_enabled(profile, fan, enabled)?;
-            } else {
-                println!(
-                    "--enable-fan-curves, --enable-fan-curve, --fan, and --data options require \
-                     --mod-profile"
-                );
-            }
-        }
-
-        if let Some(mut curve) = cmd.data.clone() {
-            let fan = cmd.fan.unwrap_or_default();
-            curve.set_fan(fan);
-            fan_proxy.set_fan_curve(profile, curve)?;
-        }
-    }
-
-    Ok(())
-}
-
 fn check_systemd_unit_active(name: &str) -> bool {
     if let Ok(out) = Command::new("systemctl")
         .arg("is-active")
@@ -1116,97 +855,3 @@ fn check_systemd_unit_enabled(name: &str) -> bool {
     false
 }
 
-fn print_firmware_attr(attr: &AsusArmouryProxyBlocking) -> Result<(), Box<dyn std::error::Error>> {
-    let name = attr.name()?;
-    println!("{}:", <&str>::from(name));
-
-    let attrs = attr.available_attrs()?;
-    if attrs.contains(&"min_value".to_string())
-        && attrs.contains(&"max_value".to_string())
-        && attrs.contains(&"current_value".to_string())
-    {
-        let c = attr.current_value()?;
-        let min = attr.min_value()?;
-        let max = attr.max_value()?;
-        println!("  current: {min}..[{c}]..{max}");
-        if attrs.contains(&"default_value".to_string()) {
-            println!("  default: {}\n", attr.default_value()?);
-        } else {
-            println!();
-        }
-    } else if attrs.contains(&"possible_values".to_string())
-        && attrs.contains(&"current_value".to_string())
-    {
-        let c = attr.current_value()?;
-        let v = attr.possible_values()?;
-        for p in v.iter().enumerate() {
-            if p.0 == 0 {
-                print!("  current: [");
-            }
-            if *p.1 == c {
-                print!("({c})");
-            } else {
-                print!("{}", p.1);
-            }
-            if p.0 < v.len() - 1 {
-                print!(",");
-            }
-            if p.0 == v.len() - 1 {
-                print!("]");
-            }
-        }
-        if attrs.contains(&"default_value".to_string()) {
-            println!("  default: {}\n", attr.default_value()?);
-        } else {
-            println!("\n");
-        }
-    } else if attrs.contains(&"current_value".to_string()) {
-        let c = attr.current_value()?;
-        println!("  current: {c}\n");
-    } else {
-        println!();
-    }
-    Ok(())
-}
-
-fn handle_armoury_command(cmd: &ArmouryCommand) -> Result<(), Box<dyn std::error::Error>> {
-    {
-        if cmd.free.is_empty() || cmd.free.len() % 2 != 0 || cmd.help {
-            const USAGE: &str = "Usage: asusctl platform panel_overdrive 1 nv_dynamic_boost 5";
-            if cmd.free.len() % 2 != 0 {
-                println!(
-                    "Incorrect number of args, each attribute label must be paired with a setting:"
-                );
-                println!("{USAGE}");
-                return Ok(());
-            }
-
-            if let Ok(attr) = find_iface::<AsusArmouryProxyBlocking>("xyz.ljones.AsusArmoury") {
-                println!("\n{USAGE}\n");
-                println!("Available firmware attributes: ");
-                for attr in attr.iter() {
-                    print_firmware_attr(attr)?;
-                }
-            }
-            return Ok(());
-        }
-
-        if let Ok(attr) = find_iface::<AsusArmouryProxyBlocking>("xyz.ljones.AsusArmoury") {
-            for cmd in cmd.free.chunks(2) {
-                for attr in attr.iter() {
-                    let name = attr.name()?;
-                    if <&str>::from(name) == cmd[0] {
-                        let mut value: i32 = cmd[1].parse()?;
-                        if value == -1 {
-                            info!("Setting to default");
-                            value = attr.default_value()?;
-                        }
-                        attr.set_current_value(value)?;
-                        print_firmware_attr(attr)?;
-                    }
-                }
-            }
-        }
-    }
-    Ok(())
-}

@@ -4,7 +4,6 @@ use std::fmt;
 use config_traits::ron;
 use rog_anime::error::AnimeError;
 use rog_platform::error::PlatformError;
-use rog_profiles::error::ProfileError;
 use rog_slash::error::SlashError;
 
 #[derive(Debug)]
@@ -22,7 +21,6 @@ pub enum RogError {
     MissingFunction(String),
     MissingLedBrightNode(String, std::io::Error),
     ReloadFail(String),
-    Profiles(ProfileError),
     Initramfs(String),
     Modprobe(String),
     Io(std::io::Error),
@@ -62,7 +60,6 @@ impl fmt::Display for RogError {
                 path, error
             ),
             RogError::ReloadFail(deets) => write!(f, "Reload error: {}", deets),
-            RogError::Profiles(deets) => write!(f, "Profile error: {}", deets),
             RogError::Initramfs(detail) => write!(f, "Initiramfs error: {}", detail),
             RogError::Modprobe(detail) => write!(f, "Modprobe error: {}", detail),
             RogError::Io(detail) => write!(f, "std::io error: {}", detail),
@@ -93,12 +90,6 @@ impl fmt::Display for RogError {
 }
 
 impl std::error::Error for RogError {}
-
-impl From<ProfileError> for RogError {
-    fn from(err: ProfileError) -> Self {
-        RogError::Profiles(err)
-    }
-}
 
 impl From<AnimeError> for RogError {
     fn from(err: AnimeError) -> Self {

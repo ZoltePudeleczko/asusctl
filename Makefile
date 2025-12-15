@@ -11,7 +11,6 @@ datarootdir = $(prefix)/share
 libdir = $(exec_prefix)/lib
 zshcpl = $(datarootdir)/zsh/site-functions
 
-BIN_ROG := rog-control-center
 BIN_C := asusctl
 BIN_D := asusd
 BIN_U := asusd-user
@@ -30,11 +29,6 @@ else
 	TARGET = debug
 endif
 
-X11 ?= 0
-ifeq ($(X11),1)
-	ARGS += --features "rog-control-center/x11"
-endif
-
 VENDORED ?= 0
 ifeq ($(VENDORED),1)
 	ARGS += --frozen
@@ -49,15 +43,11 @@ distclean:
 	rm -rf .cargo vendor vendor.tar.xz
 
 install-program:
-	$(INSTALL_PROGRAM) "./target/$(TARGET)/$(BIN_ROG)" "$(DESTDIR)$(bindir)/$(BIN_ROG)"
-
 	$(INSTALL_PROGRAM) "./target/$(TARGET)/$(BIN_C)" "$(DESTDIR)$(bindir)/$(BIN_C)"
 	$(INSTALL_PROGRAM) "./target/$(TARGET)/$(BIN_D)" "$(DESTDIR)$(bindir)/$(BIN_D)"
 	$(INSTALL_PROGRAM) "./target/$(TARGET)/$(BIN_U)" "$(DESTDIR)$(bindir)/$(BIN_U)"
 
 install-data:
-	$(INSTALL_DATA) "./rog-control-center/data/$(BIN_ROG).desktop" "$(DESTDIR)$(datarootdir)/applications/$(BIN_ROG).desktop"
-	$(INSTALL_DATA) "./rog-control-center/data/$(BIN_ROG).png" "$(DESTDIR)$(datarootdir)/icons/hicolor/512x512/apps/$(BIN_ROG).png"
 	cd rog-aura/data/layouts && find . -type f -name "*.ron" -exec $(INSTALL_DATA) "{}" "$(DESTDIR)$(datarootdir)/rog-gui/layouts/{}" \;
 
 	$(INSTALL_DATA) "./data/$(BIN_D).rules" "$(DESTDIR)$(libdir)/udev/rules.d/99-$(BIN_D).rules"
@@ -86,10 +76,6 @@ install-data:
 install: install-program install-data
 
 uninstall:
-	rm -f "$(DESTDIR)$(bindir)/$(BIN_ROG)"
-	rm -r "$(DESTDIR)$(datarootdir)/applications/$(BIN_ROG).desktop"
-	rm -r "$(DESTDIR)$(datarootdir)/icons/hicolor/512x512/apps/$(BIN_ROG).png"
-
 	rm -f "$(DESTDIR)$(bindir)/$(BIN_C)"
 	rm -f "$(DESTDIR)$(bindir)/$(BIN_D)"
 	rm -f "$(DESTDIR)$(libdir)/udev/rules.d/99-$(BIN_D).rules"
@@ -136,7 +122,6 @@ ifeq ($(STRIP_BINARIES),1)
 	strip -s ./target/$(TARGET)/$(BIN_C)
 	strip -s ./target/$(TARGET)/$(BIN_D)
 	strip -s ./target/$(TARGET)/$(BIN_U)
-	strip -s ./target/$(TARGET)/$(BIN_ROG)
 endif
 
 
