@@ -1,13 +1,9 @@
 use std::env;
 use std::error::Error;
-use std::sync::Arc;
 
 use ::zbus::Connection;
 use asusd::aura_manager::DeviceManager;
-use asusd::config::Config;
 use asusd::{print_board_info, DBUS_NAME};
-use config_traits::{StdConfig, StdConfigLoad2};
-use futures_util::lock::Mutex;
 use log::info;
 use zbus::fdo::ObjectManager;
 
@@ -55,9 +51,6 @@ async fn start_daemon() -> Result<(), Box<dyn Error>> {
     // Start zbus server
     let server = Connection::system().await?;
     server.object_server().at("/", ObjectManager).await.unwrap();
-
-    let config = Config::new().load();
-    let config = Arc::new(Mutex::new(config));
 
     let _ = DeviceManager::new(server.clone()).await?;
 

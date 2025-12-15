@@ -27,7 +27,7 @@ impl Slash {
         Self { hid, usb, config }
     }
 
-    pub async fn lock_config(&self) -> MutexGuard<SlashConfig> {
+    pub async fn lock_config(&self) -> MutexGuard<'_, SlashConfig> {
         self.config.lock().await
     }
 

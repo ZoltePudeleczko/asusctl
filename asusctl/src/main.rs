@@ -161,7 +161,7 @@ where
 fn do_parsed(
     parsed: &CliStart,
     supported_interfaces: &[String],
-    conn: Connection,
+    _conn: Connection,
 ) -> Result<(), Box<dyn std::error::Error>> {
     match &parsed.command {
         Some(CliCommand::Aura(mode)) => handle_led_mode(mode)?,
