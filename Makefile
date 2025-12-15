@@ -71,8 +71,6 @@ install-data:
 	$(INSTALL_DATA) "./data/icons/scalable/gpu-vfio.svg" "$(DESTDIR)$(datarootdir)/icons/hicolor/scalable/status/gpu-vfio.svg"
 	$(INSTALL_DATA) "./data/icons/scalable/notification-reboot.svg" "$(DESTDIR)$(datarootdir)/icons/hicolor/scalable/status/notification-reboot.svg"
 
-	cd rog-anime/data && find "./anime" -type f -exec $(INSTALL_DATA) "{}" "$(DESTDIR)$(datarootdir)/asusd/{}" \;
-
 install: install-program install-data
 
 uninstall:
@@ -109,7 +107,6 @@ vendor:
 	rm -rf vendor
 
 translate:
-	find -name \*.slint | xargs slint-tr-extractor -o rog-control-center/translations/en/rog-control-center.po
 
 build:
 ifeq ($(VENDORED),1)

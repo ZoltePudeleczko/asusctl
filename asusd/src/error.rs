@@ -2,7 +2,6 @@ use std::convert::From;
 use std::fmt;
 
 use config_traits::ron;
-use rog_anime::error::AnimeError;
 use rog_platform::error::PlatformError;
 use rog_slash::error::SlashError;
 
@@ -29,7 +28,6 @@ pub enum RogError {
     AuraEffectNotSupported,
     NoAuraKeyboard,
     NoAuraNode,
-    Anime(AnimeError),
     Slash(SlashError),
     Platform(PlatformError),
     SystemdUnitAction(String),
@@ -70,7 +68,6 @@ impl fmt::Display for RogError {
             RogError::AuraEffectNotSupported => write!(f, "Aura effect not supported"),
             RogError::NoAuraKeyboard => write!(f, "No supported Aura keyboard"),
             RogError::NoAuraNode => write!(f, "No Aura keyboard node found"),
-            RogError::Anime(deets) => write!(f, "AniMe Matrix error: {}", deets),
             RogError::Slash(deets) => write!(f, "Slash error: {}", deets),
             RogError::Platform(deets) => write!(f, "Asus Platform error: {}", deets),
             RogError::SystemdUnitAction(action) => {
@@ -90,12 +87,6 @@ impl fmt::Display for RogError {
 }
 
 impl std::error::Error for RogError {}
-
-impl From<AnimeError> for RogError {
-    fn from(err: AnimeError) -> Self {
-        RogError::Anime(err)
-    }
-}
 
 impl From<SlashError> for RogError {
     fn from(err: SlashError) -> Self {

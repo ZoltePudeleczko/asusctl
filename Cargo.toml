@@ -19,10 +19,8 @@ members = [
   "dmi-id",
   "rog-platform",
   "rog-dbus",
-  "rog-anime",
   "rog-aura",
   "rog-slash",
-  "simulators",
   "rog-scsi",
 ]
 

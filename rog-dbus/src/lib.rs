@@ -2,7 +2,6 @@ pub use asusd::{DBUS_IFACE, DBUS_NAME, DBUS_PATH};
 use zbus::proxy::ProxyImpl;
 
 pub mod scsi_aura;
-pub mod zbus_anime;
 pub mod zbus_aura;
 pub mod zbus_slash;
 

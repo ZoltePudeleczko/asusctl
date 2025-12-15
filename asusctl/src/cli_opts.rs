@@ -1,6 +1,5 @@
 use gumdrop::Options;
 
-use crate::anime_cli::AnimeCommand;
 use crate::aura_cli::{LedBrightness, LedPowerCommand1, LedPowerCommand2, SetAuraBuiltin};
 use crate::scsi_cli::ScsiCommand;
 use crate::slash_cli::SlashCommand;
@@ -31,8 +30,6 @@ pub enum CliCommand {
     AuraPowerOld(LedPowerCommand1),
     #[options(help = "Set the LED power states")]
     AuraPower(LedPowerCommand2),
-    #[options(name = "anime", help = "Manage AniMe Matrix")]
-    Anime(AnimeCommand),
     #[options(name = "slash", help = "Manage Slash Ledbar")]
     Slash(SlashCommand),
     #[options(name = "scsi", help = "Manage SCSI external drive")]

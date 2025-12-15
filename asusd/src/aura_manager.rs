@@ -17,7 +17,6 @@ use udev::{Device, MonitorBuilder};
 use zbus::zvariant::{ObjectPath, OwnedObjectPath};
 use zbus::Connection;
 
-use crate::aura_anime::trait_impls::AniMeZbus;
 use crate::aura_laptop::trait_impls::AuraZbus;
 use crate::aura_scsi::trait_impls::ScsiZbus;
 use crate::aura_slash::trait_impls::SlashZbus;
@@ -68,10 +67,6 @@ fn dbus_path_for_tuf() -> OwnedObjectPath {
 
 fn dbus_path_for_slash() -> OwnedObjectPath {
     ObjectPath::from_str_unchecked(&format!("{ASUS_ZBUS_PATH}/{MOD_NAME}/slash")).into()
-}
-
-fn dbus_path_for_anime() -> OwnedObjectPath {
-    ObjectPath::from_str_unchecked(&format!("{ASUS_ZBUS_PATH}/{MOD_NAME}/anime")).into()
 }
 
 fn dbus_path_for_scsi(prod_id: &str) -> OwnedObjectPath {
@@ -130,24 +125,6 @@ impl DeviceManager {
                                 let path =
                                     dbus_path_for_dev(&usb_device).unwrap_or(dbus_path_for_slash());
                                 let ctrl = SlashZbus::new(slash);
-                                ctrl.start_tasks(connection, path.clone()).await.unwrap();
-                                devices.push(AsusDevice {
-                                    device: dev_type,
-                                    dbus_path: path,
-                                });
-                            }
-                        }
-                        // ANIME MATRIX DEVICE
-                        if let Ok(dev_type) = DeviceHandle::maybe_anime_hid(
-                            dev.clone(),
-                            usb_id.to_str().unwrap_or_default(),
-                        )
-                        .await
-                        {
-                            if let DeviceHandle::AniMe(anime) = dev_type.clone() {
-                                let path =
-                                    dbus_path_for_dev(&usb_device).unwrap_or(dbus_path_for_anime());
-                                let ctrl = AniMeZbus::new(anime);
                                 ctrl.start_tasks(connection, path.clone()).await.unwrap();
                                 devices.push(AsusDevice {
                                     device: dev_type,
@@ -282,15 +259,11 @@ impl DeviceManager {
             devices.append(devs);
         }
         // USB after, need to check if HID picked something up and if so, skip it
-        let mut do_anime = true;
         let mut do_slash = true;
         let mut do_kb_backlight = true;
         for dev in devices.iter() {
             if matches!(dev.device, DeviceHandle::Slash(_)) {
                 do_slash = false;
-            }
-            if matches!(dev.device, DeviceHandle::AniMe(_)) {
-                do_anime = false;
             }
             if matches!(dev.device, DeviceHandle::Aura(_) | DeviceHandle::OldAura(_)) {
                 do_kb_backlight = false;
@@ -310,29 +283,6 @@ impl DeviceManager {
                 }
             } else {
                 info!("Tested device was not Slash");
-            }
-        }
-
-        if do_anime {
-            if let Ok(dev_type) = DeviceHandle::maybe_anime_usb().await {
-                // TODO: this is copy/pasted
-                if let DeviceHandle::AniMe(anime) = dev_type.clone() {
-                    let path = dbus_path_for_anime();
-                    let ctrl = AniMeZbus::new(anime);
-                    if ctrl
-                        .start_tasks(connection, path.clone())
-                        .await
-                        .map_err(|e| error!("Failed to start tasks: {e:?}, not adding this device"))
-                        .is_ok()
-                    {
-                        devices.push(AsusDevice {
-                            device: dev_type,
-                            dbus_path: path,
-                        });
-                    }
-                }
-            } else {
-                info!("Tested device was not AniMe Matrix");
             }
         }
 
@@ -495,12 +445,6 @@ impl DeviceManager {
                                                     conn_copy
                                                         .object_server()
                                                         .remove::<SlashZbus, _>(&path)
-                                                        .await?
-                                                }
-                                                DeviceHandle::AniMe(_) => {
-                                                    conn_copy
-                                                        .object_server()
-                                                        .remove::<AniMeZbus, _>(&path)
                                                         .await?
                                                 }
                                                 DeviceHandle::Scsi(_) => {

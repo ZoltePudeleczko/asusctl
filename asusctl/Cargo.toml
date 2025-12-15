@@ -9,7 +9,6 @@ homepage.workspace = true
 edition.workspace = true
 
 [dependencies]
-rog_anime = { path = "../rog-anime" }
 rog_scsi = { path = "../rog-scsi" }
 rog_slash = { path = "../rog-slash" }
 rog_aura = { path = "../rog-aura" }

@@ -1,19 +1,12 @@
 use std::io::Write;
 use std::path::PathBuf;
-use std::sync::atomic::AtomicBool;
-use std::sync::{Arc, Mutex};
 
 use asusd_user::config::*;
-use asusd_user::ctrl_anime::{CtrlAnime, CtrlAnimeInner};
 use config_traits::{StdConfig, StdConfigLoad};
-use rog_anime::usb::get_anime_type;
 use rog_aura::aura_detection::LedSupportData;
 use rog_aura::keyboard::KeyLayout;
-use rog_dbus::zbus_anime::AnimeProxyBlocking;
 use rog_dbus::zbus_aura::AuraProxyBlocking;
-use rog_dbus::{list_iface_blocking, DBUS_NAME};
 use smol::Executor;
-use zbus::Connection;
 
 #[cfg(not(feature = "local_data"))]
 const DATA_DIR: &str = "/usr/share/rog-gui/";
@@ -30,59 +23,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .init();
 
     println!("  user daemon v{}", asusd_user::VERSION);
-    println!("    rog-anime v{}", rog_anime::VERSION);
     println!("     rog-dbus v{}", rog_dbus::VERSION);
     println!("rog-platform v{}", rog_platform::VERSION);
 
     let conn = zbus::blocking::Connection::system().unwrap();
 
-    let supported = list_iface_blocking()?;
     let config = ConfigBase::new().load();
     let executor = Executor::new();
-
-    let early_return = Arc::new(AtomicBool::new(false));
-    // Set up the anime data and run loop/thread
-    if supported.contains(&"xyz.ljones.Anime".to_string()) {
-        if let Some(cfg) = config.active_anime {
-            let anime_type = get_anime_type();
-            let anime_config = ConfigAnime::new().set_name(cfg).load();
-            let anime = anime_config.create(anime_type)?;
-            let anime_config = Arc::new(Mutex::new(anime_config));
-
-            let anime_proxy_blocking = AnimeProxyBlocking::new(&conn).unwrap();
-            executor
-                .spawn(async move {
-                    // Create server
-                    let mut connection = Connection::session().await.unwrap();
-                    connection.request_name(DBUS_NAME).await.unwrap();
-
-                    // Inner behind mutex required for thread safety
-                    let inner = Arc::new(Mutex::new(
-                        CtrlAnimeInner::new(
-                            anime,
-                            anime_proxy_blocking.clone(),
-                            early_return.clone(),
-                        )
-                        .unwrap(),
-                    ));
-                    // Need new client object for dbus control part
-                    let anime_control = CtrlAnime::new(
-                        anime_config,
-                        inner.clone(),
-                        anime_proxy_blocking,
-                        early_return,
-                    )
-                    .unwrap();
-                    anime_control.add_to_server(&mut connection).await;
-                    loop {
-                        if let Ok(inner) = inner.clone().try_lock() {
-                            inner.run().ok();
-                        }
-                    }
-                })
-                .detach();
-        }
-    }
 
     // if supported.keyboard_led.per_key_led_mode {
     if let Some(cfg) = config.active_aura {

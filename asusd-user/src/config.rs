@@ -1,14 +1,10 @@
 use std::path::PathBuf;
-use std::time::Duration;
 
 use config_traits::{StdConfig, StdConfigLoad};
-use rog_anime::{ActionLoader, AnimTime, AnimeType, Fade, Sequences as AnimeSequences, Vec2};
 use rog_aura::effects::{AdvancedEffects as AuraSequences, Breathe, DoomFlicker, Effect, Static};
 use rog_aura::keyboard::LedCode;
 use rog_aura::{Colour, Speed};
 use serde::{Deserialize, Serialize};
-
-use crate::error::Error;
 
 const ROOT_CONF_DIR: &str = "rog";
 
@@ -17,106 +13,6 @@ fn root_conf_dir() -> PathBuf {
     dir.push(ROOT_CONF_DIR);
     dir
 }
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ConfigAnime {
-    pub name: String,
-    pub anime: Vec<ActionLoader>,
-}
-
-impl ConfigAnime {
-    pub fn create(&self, anime_type: AnimeType) -> Result<AnimeSequences, Error> {
-        let mut seq = AnimeSequences::new(anime_type);
-
-        for (idx, action) in self.anime.iter().enumerate() {
-            seq.insert(idx, action)?;
-        }
-
-        Ok(seq)
-    }
-
-    pub fn set_name(mut self, name: String) -> Self {
-        self.name = name;
-        self
-    }
-}
-
-impl Default for ConfigAnime {
-    fn default() -> Self {
-        Self {
-            name: "anime-default".to_owned(),
-            anime: vec![
-                ActionLoader::AsusImage {
-                    file: "/usr/share/asusd/anime/custom/diagonal-template.png".into(),
-                    brightness: 1.0,
-                    time: AnimTime::Fade(Fade::new(
-                        Duration::from_secs(2),
-                        None,
-                        Duration::from_secs(2),
-                    )),
-                },
-                ActionLoader::AsusAnimation {
-                    file: "/usr/share/asusd/anime/asus/rog/Sunset.gif".into(),
-                    brightness: 0.5,
-                    time: AnimTime::Fade(Fade::new(
-                        Duration::from_secs(6),
-                        None,
-                        Duration::from_secs(3),
-                    )),
-                },
-                ActionLoader::ImageAnimation {
-                    file: "/usr/share/asusd/anime/custom/sonic-run.gif".into(),
-                    scale: 0.9,
-                    angle: 0.65,
-                    translation: Vec2::default(),
-                    brightness: 0.5,
-                    time: AnimTime::Fade(Fade::new(
-                        Duration::from_secs(2),
-                        Some(Duration::from_secs(2)),
-                        Duration::from_secs(2),
-                    )),
-                },
-                ActionLoader::Image {
-                    file: "/usr/share/asusd/anime/custom/rust.png".into(),
-                    scale: 1.0,
-                    angle: 0.0,
-                    translation: Vec2::default(),
-                    time: AnimTime::Fade(Fade::new(
-                        Duration::from_secs(2),
-                        Some(Duration::from_secs(1)),
-                        Duration::from_secs(2),
-                    )),
-                    brightness: 0.6,
-                },
-                ActionLoader::Pause(Duration::from_secs(1)),
-                ActionLoader::ImageAnimation {
-                    file: "/usr/share/asusd/anime/custom/sonic-wait.gif".into(),
-                    scale: 0.9,
-                    angle: 0.0,
-                    translation: Vec2::new(3.0, 2.0),
-                    brightness: 0.5,
-                    time: AnimTime::Count(2),
-                },
-            ],
-        }
-    }
-}
-
-impl StdConfig for ConfigAnime {
-    fn new() -> Self {
-        Self::default()
-    }
-
-    fn file_name(&self) -> String {
-        format!("{}.ron", self.name)
-    }
-
-    fn config_dir() -> std::path::PathBuf {
-        root_conf_dir()
-    }
-}
-
-impl StdConfigLoad for ConfigAnime {}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ConfigAura {
@@ -206,8 +102,6 @@ impl StdConfigLoad for ConfigAura {}
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct ConfigBase {
-    /// Name of active anime config file in the user config directory
-    pub active_anime: Option<String>,
     /// Name of active aura config file in the user config directory
     pub active_aura: Option<String>,
 }
@@ -215,7 +109,6 @@ pub struct ConfigBase {
 impl StdConfig for ConfigBase {
     fn new() -> Self {
         Self {
-            active_anime: Some("anime-default".to_owned()),
             active_aura: Some("aura-default".to_owned()),
         }
     }

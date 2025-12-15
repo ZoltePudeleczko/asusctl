@@ -4,18 +4,14 @@ use std::path::Path;
 use std::process::Command;
 use std::thread::sleep;
 
-use anime_cli::{AnimeActions, AnimeCommand};
 use aura_cli::{LedPowerCommand1, LedPowerCommand2};
 use dmi_id::DMIID;
 use gumdrop::{Opt, Options};
 use log::error;
-use rog_anime::usb::get_anime_type;
-use rog_anime::{AnimTime, AnimeDataBuffer, AnimeDiagonal, AnimeGif, AnimeImage, AnimeType, Vec2};
 use rog_aura::keyboard::{AuraPowerState, LaptopAuraPower};
 use rog_aura::{self, AuraDeviceType, AuraEffect, PowerZones};
 use rog_dbus::list_iface_blocking;
 use rog_dbus::scsi_aura::ScsiAuraProxyBlocking;
-use rog_dbus::zbus_anime::AnimeProxyBlocking;
 use rog_dbus::zbus_aura::AuraProxyBlocking;
 use rog_dbus::zbus_slash::SlashProxyBlocking;
 use rog_scsi::AuraMode;
@@ -28,7 +24,6 @@ use crate::aura_cli::{AuraPowerStates, LedBrightness};
 use crate::cli_opts::*;
 use crate::slash_cli::SlashCommand;
 
-mod anime_cli;
 mod aura_cli;
 mod cli_opts;
 mod scsi_cli;
@@ -167,7 +162,6 @@ fn do_parsed(
         Some(CliCommand::Aura(mode)) => handle_led_mode(mode)?,
         Some(CliCommand::AuraPowerOld(pow)) => handle_led_power1(pow)?,
         Some(CliCommand::AuraPower(pow)) => handle_led_power2(pow)?,
-        Some(CliCommand::Anime(cmd)) => handle_anime(cmd)?,
         Some(CliCommand::Slash(cmd)) => handle_slash(cmd)?,
         Some(CliCommand::Scsi(cmd)) => handle_scsi(cmd)?,
         None => {
@@ -195,12 +189,6 @@ fn do_parsed(
                     for command in commands.iter().filter(|command| {
                         if command.trim().starts_with("aura")
                             && !supported_interfaces.contains(&"xyz.ljones.Aura".to_string())
-                        {
-                            return false;
-                        }
-
-                        if command.trim().starts_with("anime")
-                            && !supported_interfaces.contains(&"xyz.ljones.Anime".to_string())
                         {
                             return false;
                         }
@@ -291,205 +279,6 @@ fn do_parsed(
     Ok(())
 }
 
-fn handle_anime(cmd: &AnimeCommand) -> Result<(), Box<dyn std::error::Error>> {
-    if (cmd.command.is_none()
-        && cmd.enable_display.is_none()
-        && cmd.enable_powersave_anim.is_none()
-        && cmd.brightness.is_none()
-        && cmd.off_when_lid_closed.is_none()
-        && cmd.off_when_suspended.is_none()
-        && cmd.off_when_unplugged.is_none()
-        && cmd.off_with_his_head.is_none()
-        && !cmd.clear)
-        || cmd.help
-    {
-        println!("Missing arg or command\n\n{}", cmd.self_usage());
-        if let Some(lst) = cmd.self_command_list() {
-            println!("\n{}", lst);
-        }
-    }
-
-    let animes = find_iface::<AnimeProxyBlocking>("xyz.ljones.Anime").map_err(|e| {
-        error!("Did not find any interface for xyz.ljones.Anime: {e:?}");
-        e
-    })?;
-
-    for proxy in animes {
-        if let Some(enable) = cmd.enable_display {
-            proxy.set_enable_display(enable)?;
-        }
-        if let Some(enable) = cmd.enable_powersave_anim {
-            proxy.set_builtins_enabled(enable)?;
-        }
-        if let Some(bright) = cmd.brightness {
-            proxy.set_brightness(bright)?;
-        }
-        if let Some(enable) = cmd.off_when_lid_closed {
-            proxy.set_off_when_lid_closed(enable)?;
-        }
-        if let Some(enable) = cmd.off_when_suspended {
-            proxy.set_off_when_suspended(enable)?;
-        }
-        if let Some(enable) = cmd.off_when_unplugged {
-            proxy.set_off_when_unplugged(enable)?;
-        }
-        if cmd.off_with_his_head.is_some() {
-            println!("Did Alice _really_ make it back from Wonderland?");
-        }
-
-        let mut anime_type = get_anime_type();
-        if let AnimeType::Unsupported = anime_type {
-            if let Some(model) = cmd.override_type {
-                anime_type = model;
-            }
-        }
-
-        if cmd.clear {
-            let data = vec![255u8; anime_type.data_length()];
-            let tmp = AnimeDataBuffer::from_vec(anime_type, data)?;
-            proxy.write(tmp)?;
-        }
-
-        if let Some(action) = cmd.command.as_ref() {
-            match action {
-                AnimeActions::Image(image) => {
-                    if image.help_requested() || image.path.is_empty() {
-                        println!("Missing arg or command\n\n{}", image.self_usage());
-                        if let Some(lst) = image.self_command_list() {
-                            println!("\n{}", lst);
-                        }
-                        return Ok(());
-                    }
-                    verify_brightness(image.bright);
-
-                    let matrix = AnimeImage::from_png(
-                        Path::new(&image.path),
-                        image.scale,
-                        image.angle,
-                        Vec2::new(image.x_pos, image.y_pos),
-                        image.bright,
-                        anime_type,
-                    )?;
-
-                    proxy.write(<AnimeDataBuffer>::try_from(&matrix)?)?;
-                }
-                AnimeActions::PixelImage(image) => {
-                    if image.help_requested() || image.path.is_empty() {
-                        println!("Missing arg or command\n\n{}", image.self_usage());
-                        if let Some(lst) = image.self_command_list() {
-                            println!("\n{}", lst);
-                        }
-                        return Ok(());
-                    }
-                    verify_brightness(image.bright);
-
-                    let matrix = AnimeDiagonal::from_png(
-                        Path::new(&image.path),
-                        None,
-                        image.bright,
-                        anime_type,
-                    )?;
-
-                    proxy.write(matrix.into_data_buffer(anime_type)?)?;
-                }
-                AnimeActions::Gif(gif) => {
-                    if gif.help_requested() || gif.path.is_empty() {
-                        println!("Missing arg or command\n\n{}", gif.self_usage());
-                        if let Some(lst) = gif.self_command_list() {
-                            println!("\n{}", lst);
-                        }
-                        return Ok(());
-                    }
-                    verify_brightness(gif.bright);
-
-                    let matrix = AnimeGif::from_gif(
-                        Path::new(&gif.path),
-                        gif.scale,
-                        gif.angle,
-                        Vec2::new(gif.x_pos, gif.y_pos),
-                        AnimTime::Count(1),
-                        gif.bright,
-                        anime_type,
-                    )?;
-
-                    let mut loops = gif.loops as i32;
-                    loop {
-                        for frame in matrix.frames() {
-                            proxy.write(frame.frame().clone())?;
-                            sleep(frame.delay());
-                        }
-                        if loops >= 0 {
-                            loops -= 1;
-                        }
-                        if loops == 0 {
-                            break;
-                        }
-                    }
-                }
-                AnimeActions::PixelGif(gif) => {
-                    if gif.help_requested() || gif.path.is_empty() {
-                        println!("Missing arg or command\n\n{}", gif.self_usage());
-                        if let Some(lst) = gif.self_command_list() {
-                            println!("\n{}", lst);
-                        }
-                        return Ok(());
-                    }
-                    verify_brightness(gif.bright);
-
-                    let matrix = AnimeGif::from_diagonal_gif(
-                        Path::new(&gif.path),
-                        AnimTime::Count(1),
-                        gif.bright,
-                        anime_type,
-                    )?;
-
-                    let mut loops = gif.loops as i32;
-                    loop {
-                        for frame in matrix.frames() {
-                            proxy.write(frame.frame().clone())?;
-                            sleep(frame.delay());
-                        }
-                        if loops >= 0 {
-                            loops -= 1;
-                        }
-                        if loops == 0 {
-                            break;
-                        }
-                    }
-                }
-                AnimeActions::SetBuiltins(builtins) => {
-                    if builtins.help_requested() || builtins.set.is_none() {
-                        println!(
-                            "\nAny unspecified args will be set to default (first shown var)\n"
-                        );
-                        println!("\n{}", builtins.self_usage());
-                        if let Some(lst) = builtins.self_command_list() {
-                            println!("\n{}", lst);
-                        }
-                        return Ok(());
-                    }
-
-                    proxy.set_builtin_animations(rog_anime::Animations {
-                        boot: builtins.boot,
-                        awake: builtins.awake,
-                        sleep: builtins.sleep,
-                        shutdown: builtins.shutdown,
-                    })?;
-                }
-            }
-        }
-    }
-    Ok(())
-}
-
-fn verify_brightness(brightness: f32) {
-    if !(0.0..=1.0).contains(&brightness) {
-        println!(
-            "Image and global brightness must be between 0.0 and 1.0 (inclusive), was {}",
-            brightness
-        );
-    }
-}
 
 fn handle_slash(cmd: &SlashCommand) -> Result<(), Box<dyn std::error::Error>> {
     if (cmd.brightness.is_none()
