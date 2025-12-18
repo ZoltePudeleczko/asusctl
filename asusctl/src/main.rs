@@ -274,6 +274,72 @@ fn do_parsed(
 }
 
 fn handle_slash(cmd: &SlashCommand) -> Result<(), Box<dyn std::error::Error>> {
+    let slashes = find_iface::<SlashProxyBlocking>("xyz.ljones.Slash")?;
+
+    // Handle --get/-g flag
+    if cmd.get {
+        for proxy in &slashes {
+            println!("Slash Ledbar Current Settings:");
+            println!("{}", "=".repeat(80));
+
+            match proxy.enabled() {
+                Ok(val) => println!("Enabled: {}", val),
+                Err(e) => println!("Enabled: <error: {}>", e),
+            }
+
+            match proxy.brightness() {
+                Ok(val) => println!("Brightness: {} (0-255)", val),
+                Err(e) => println!("Brightness: <error: {}>", e),
+            }
+
+            match proxy.interval() {
+                Ok(val) => println!("Interval: {} (0-5)", val),
+                Err(e) => println!("Interval: <error: {}>", e),
+            }
+
+            // Mode property may have type mismatch - try to get it, but don't fail if it
+            // errors
+            match proxy.mode() {
+                Ok(val) => println!("Mode: {:?}", val),
+                Err(e) => {
+                    println!("Mode: <error: {}>", e);
+                    println!("  Note: This may indicate a server-side type mismatch.");
+                    println!(
+                        "  Please ensure asusd is rebuilt and restarted with the latest code."
+                    );
+                }
+            }
+
+            println!("\nPower State Settings:");
+
+            match proxy.show_on_boot() {
+                Ok(val) => println!("  Show on boot: {}", val),
+                Err(e) => println!("  Show on boot: <error: {}>", e),
+            }
+
+            match proxy.show_on_shutdown() {
+                Ok(val) => println!("  Show on shutdown: {}", val),
+                Err(e) => println!("  Show on shutdown: <error: {}>", e),
+            }
+
+            match proxy.show_on_sleep() {
+                Ok(val) => println!("  Show on sleep: {}", val),
+                Err(e) => println!("  Show on sleep: <error: {}>", e),
+            }
+
+            match proxy.show_on_battery() {
+                Ok(val) => println!("  Show on battery: {}", val),
+                Err(e) => println!("  Show on battery: <error: {}>", e),
+            }
+
+            match proxy.show_battery_warning() {
+                Ok(val) => println!("  Show battery warning: {}", val),
+                Err(e) => println!("  Show battery warning: <error: {}>", e),
+            }
+        }
+        return Ok(());
+    }
+
     if (cmd.brightness.is_none()
         && cmd.interval.is_none()
         && cmd.show_on_boot.is_none()
@@ -294,7 +360,6 @@ fn handle_slash(cmd: &SlashCommand) -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let slashes = find_iface::<SlashProxyBlocking>("xyz.ljones.Slash")?;
     for proxy in slashes {
         if cmd.enable {
             proxy.set_enabled(true)?;
@@ -413,6 +478,55 @@ fn handle_scsi(cmd: &ScsiCommand) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn handle_led_mode(mode: &LedModeCommand) -> Result<(), Box<dyn std::error::Error>> {
+    let aura = find_iface::<AuraProxyBlocking>("xyz.ljones.Aura")?;
+
+    // Handle --get/-g flag
+    if mode.get {
+        for aura_proxy in &aura {
+            let current_mode = aura_proxy.led_mode()?;
+            let all_mode_data = aura_proxy.all_mode_data()?;
+
+            println!("Current Aura Mode: {:?}", current_mode);
+            println!("\nAll Aura Mode Options:");
+            println!("{}", "=".repeat(80));
+
+            for (mode_num, effect) in &all_mode_data {
+                let mode_name = <&str>::from(mode_num);
+                let is_current = *mode_num == current_mode;
+                let current_marker = if is_current { " (current)" } else { "" };
+
+                println!("\nMode: {}{}", mode_name, current_marker);
+                println!("  Zone: {:?}", effect.zone);
+                println!(
+                    "  Colour 1: RGB({}, {}, {}) / #{:02x}{:02x}{:02x}",
+                    effect.colour1.r,
+                    effect.colour1.g,
+                    effect.colour1.b,
+                    effect.colour1.r,
+                    effect.colour1.g,
+                    effect.colour1.b
+                );
+
+                // Only show colour2 if it's not black (default)
+                if effect.colour2.r != 0 || effect.colour2.g != 0 || effect.colour2.b != 0 {
+                    println!(
+                        "  Colour 2: RGB({}, {}, {}) / #{:02x}{:02x}{:02x}",
+                        effect.colour2.r,
+                        effect.colour2.g,
+                        effect.colour2.b,
+                        effect.colour2.r,
+                        effect.colour2.g,
+                        effect.colour2.b
+                    );
+                }
+
+                println!("  Speed: {:?}", effect.speed);
+                println!("  Direction: {:?}", effect.direction);
+            }
+        }
+        return Ok(());
+    }
+
     if mode.command.is_none() && !mode.prev_mode && !mode.next_mode {
         if !mode.help {
             println!("Missing arg or command\n");
@@ -423,7 +537,6 @@ fn handle_led_mode(mode: &LedModeCommand) -> Result<(), Box<dyn std::error::Erro
         if let Some(cmdlist) = LedModeCommand::command_list() {
             let commands: Vec<String> = cmdlist.lines().map(|s| s.to_owned()).collect();
             // TODO: multiple rgb check
-            let aura = find_iface::<AuraProxyBlocking>("xyz.ljones.Aura")?;
             let modes = aura.first().unwrap().supported_basic_modes()?;
             for command in commands.iter().filter(|command| {
                 for mode in &modes {
@@ -453,7 +566,6 @@ fn handle_led_mode(mode: &LedModeCommand) -> Result<(), Box<dyn std::error::Erro
         println!("Please specify either next or previous");
         return Ok(());
     }
-    let aura = find_iface::<AuraProxyBlocking>("xyz.ljones.Aura")?;
     if mode.next_mode {
         for aura in aura {
             let mode = aura.led_mode()?;

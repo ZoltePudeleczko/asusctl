@@ -9,6 +9,8 @@ pub struct SlashCommand {
     pub enable: bool,
     #[options(help = "Disable the Slash Ledbar")]
     pub disable: bool,
+    #[options(short = "g", long = "get", help = "get current slash ledbar settings")]
+    pub get: bool,
     #[options(short = "l", meta = "", help = "Set brightness value <0-255>")]
     pub brightness: Option<u8>,
     #[options(meta = "", help = "Set interval value <0-5>")]

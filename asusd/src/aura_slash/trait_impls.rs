@@ -138,9 +138,9 @@ impl SlashZbus {
     }
 
     #[zbus(property)]
-    async fn mode(&self) -> zbus::fdo::Result<u8> {
+    async fn mode(&self) -> zbus::fdo::Result<SlashMode> {
         let config = self.0.lock_config().await;
-        Ok(config.display_interval)
+        Ok(config.display_mode)
     }
 
     /// Set interval between slash animations (0-255)

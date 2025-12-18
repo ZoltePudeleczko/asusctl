@@ -44,6 +44,12 @@ pub struct LedModeCommand {
     pub next_mode: bool,
     #[options(help = "switch to previous aura mode")]
     pub prev_mode: bool,
+    #[options(
+        short = 'g',
+        long = "get",
+        help = "get current aura mode and all mode options"
+    )]
+    pub get: bool,
     #[options(command)]
     pub command: Option<SetAuraBuiltin>,
 }
